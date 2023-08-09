@@ -16,8 +16,22 @@ namespace Worker
         {
             try
             {
-                var pgsql = OpenDbConnection("Server=db;Username=postgres;Password=postgres;");
-                var redisConn = OpenRedisConnection("redis");
+                var dbHost = Environment.GetEnvironmentVariable("PG_HOST");
+                var dbUser = Environment.GetEnvironmentVariable("PG_USER");
+                var dbPassword = Environment.GetEnvironmentVariable("PG_PASSWORD");
+                var dbURL = $"Server={dbHost};Username={dbUser};Password={dbPassword};";
+                if (dbHost == null || dbUser == null || dbPassword == null)
+                {
+                    dbURL = "Server=db;Username=postgres;Password=postgres;";
+                }
+                var pgsql = OpenDbConnection(dbURL);
+
+                var redisHost = Environment.GetEnvironmentVariable("REDIS_HOST");
+                if (redisHost == null)
+                {
+                    redisHost = "redis";
+                }
+                var redisConn = OpenRedisConnection(redisHost);
                 var redis = redisConn.GetDatabase();
 
                 // Keep alive is not implemented in Npgsql yet. This workaround was recommended:
@@ -46,7 +60,7 @@ namespace Worker
                         if (!pgsql.State.Equals(System.Data.ConnectionState.Open))
                         {
                             Console.WriteLine("Reconnecting DB");
-                            pgsql = OpenDbConnection("Server=db;Username=postgres;Password=postgres;");
+                            pgsql = OpenDbConnection(dbURL);
                         }
                         else
                         { // Normal +1 vote requested
@@ -97,7 +111,18 @@ namespace Worker
                                         id VARCHAR(255) NOT NULL UNIQUE,
                                         vote VARCHAR(255) NOT NULL
                                     )";
-            command.ExecuteNonQuery();
+            try
+            {
+                command.ExecuteNonQuery();
+            }
+            catch (Exception)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+            finally
+            {
+                command.Dispose();
+            }
 
             return connection;
         }
