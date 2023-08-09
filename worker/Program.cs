@@ -115,7 +115,7 @@ namespace Worker
             {
                 command.ExecuteNonQuery();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.Error.WriteLine(ex.ToString());
             }
