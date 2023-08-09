@@ -1,0 +1,27 @@
+previewsEnabled: true
+services:
+- type: web
+  name: vote
+  healthCheckPath: /
+  runtime: docker
+  plan: standard
+  rootDir: vote
+  autoDeploy: true
+  branch: anurag/spc-demo
+  envVars:
+  - key: OPTION_A
+    value: "LK-99 is real"
+  - key: OPTION_B
+    value: "LK-99 is fake"
+  - key: REDIS_URL
+    fromService:
+      type: redis
+      name: vote-redis
+      property: connectionString
+- type: redis
+  name: vote-redis
+  ipAllowList: [] # no public IPs
+
+databases:
+- name: vote-db
+  ipAllowList: [] # no public IPs
